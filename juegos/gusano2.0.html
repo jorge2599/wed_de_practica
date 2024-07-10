@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juego de Gusano</title>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        height: 100vh;
+        background-color:#000 ;
+    }
+
+    @keyframes canvas {
+        0% {
+            border-color: #00FEFF;
+        }
+        50% {
+            border-color: #00E5FF;
+        }
+        100% {
+            border-color: #00FF9B;
+        }
+    }
+
+    canvas {
+        animation: canvas 2s infinite;
+        border: 10px solid #000;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+
+    .info {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    #level, #score, #deaths {
+        font-size: 18px;
+        margin-right: 10px;
+        border: 2px solid;
+        border-radius: 10px;
+        border-color: #18FF00;
+        color:#00FDCB;
+    }
+
+    .controls {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+    }
+
+    button {
+        font-size: 18px;
+        padding: 10px 20px;
+        margin: 5px;
+        background-color: #7A7A7A;
+        
+    }
+    
+    #controlButtons {
+    position: absolute;
+    top: 10px;
+    left:10px;
+}
+
+    
+   
+</style>
+</head>
+<body>
+
+<div class="info">
+    <span id="level">Nivel: 1</span>
+    <span id="score">Puntuación: 0</span>
+    <span id="deaths">Muertes: 0</span>
+</div>
+
+<canvas id="gameCanvas" width="370" height="400"></canvas>
+
+<div id="controlButtons">
+    <button id="pauseButton" onclick="pauseGame()">Pausa</button>
+    <button id="resumeButton" onclick="resumeGame()" style="display:none;">Reanudar</button>
+</div>
+
+<div>
+    <button id="startButton" onclick="startGame()">️iniciar</button>
+</div>
+
+<div class="controls">
+    <button onclick="changeDirection('up')">⬆</button>
+</div>
+
+<div class="controls">
+    <button onclick="changeDirection('left')">←</button>
+    <button onclick="changeDirection('down')">⬇</button>
+    <button onclick="changeDirection('right')">→</button>
+</div>
+
+<script>
+var canvas = document.getElementById("gameCanvas");
+var ctx = canvas.getContext("2d");
+
+var gridSize = 20;
+var tileCount = 20;
+var snake = [{x: 10, y: 10}];
+var dx = 0;
+var dy = 0;
+var foods = [];
+var foodColors = ["#FF0C00", "#844000", "#883000", "#780006", "#6A0E00"];
+var obstacles = [];
+var intervalId;
+var score = 0;
+var level = 1;
+var deaths = 0;
+var obstacleCount = 3;
+var growth = 0;
+var isPaused = false; // Agrega esta variable
+
+function respawnSnake() {
+    snake = [{x: 10, y: 10}];
+    dx = 0;
+    dy = 0;
+    growth = 0;
+}
+
+function gameOver() {
+    clearInterval(intervalId);
+    deaths++;
+    score = 0; // Reiniciar puntos a 0
+    level = 1; // Reiniciar nivel a 1
+    obstacleCount = 3; // Reiniciar obstáculos a 3
+    document.getElementById("score").textContent = "Puntuación: " + score; // Actualizar puntaje en el HTML
+    document.getElementById("level").textContent = "Nivel: " + level; // Actualizar nivel en el HTML
+    document.getElementById("deaths").textContent = "Muertes: " + deaths;
+    alert("¡Has muerto!☠️😜.");
+    respawnSnake();
+    generateObstacles(); // Generar obstáculos para el próximo juego
+    generateFood(); // Generar comida para el próximo juego
+    intervalId = setInterval(gameLoop, 150);
+}
+
+function drawSnake() {
+    snake.forEach(function(segment, index) {
+        // Dibujar el cuerpo del gusano (en este caso, un rectángulo verde)
+        ctx.fillStyle = "lime";
+        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
+
+        // Dibujar los ojos solo en la cabeza del gusano
+        if (index === 0) {
+            ctx.fillStyle = "black";
+            var eyeSize = gridSize / 6; // Tamaño de los ojos
+            var eyeOffsetX = gridSize / 4; // Desplazamiento horizontal de los ojos
+            var eyeOffsetY = gridSize / 3; // Desplazamiento vertical de los ojos
+            ctx.fillRect(segment.x * gridSize + eyeOffsetX, segment.y * gridSize + eyeOffsetY, eyeSize, eyeSize); // Ojo izquierdo
+            ctx.fillRect(segment.x * gridSize + gridSize - eyeOffsetX - eyeSize, segment.y * gridSize + eyeOffsetY, eyeSize, eyeSize); // Ojo derecho
+        }
+    });
+}
+
+
+
+function drawFood() {
+    foods.forEach(function(food, index) {
+        ctx.fillStyle = foodColors[index % foodColors.length];
+        ctx.beginPath();
+        ctx.arc((food.x * gridSize) + (gridSize / 2), (food.y * gridSize) + (gridSize / 2), gridSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+    });
+}
+
+
+function drawObstacles() {
+    ctx.fillStyle = "gray";
+    obstacles.forEach(function(obstacle) {
+        ctx.fillRect(obstacle.x * gridSize, obstacle.y * gridSize, gridSize, gridSize);
+    });
+}
+
+function updateSnake() {
+    var head = {x: snake[0].x + dx, y: snake[0].y + dy};
+    // Control de colisiones con obstáculos
+    if (obstacles.some(obstacle => obstacle.x === head.x && obstacle.y === head.y)) {
+        gameOver();
+        return;
+    }
+    // Control de colisiones con los bordes del canvas
+    if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+        gameOver();
+        return;
+    }
+    // Control de colisiones con el propio cuerpo
+    for (let i = 1; i < snake.length; i++) {
+        if (head.x === snake[i].x && head.y === snake[i].y) {
+            // Reducir la puntuación
+            score -= 5;
+            // Actualizar la puntuación en el HTML
+            document.getElementById("score").textContent = "Puntuación: " + score;
+            // Reducir el tamaño del gusano
+            snake.splice(i);
+            return;
+        }
+    }
+    snake.unshift(head);
+    // Control de colisiones con comida
+    foods.forEach(function(food, index) {
+        if (head.x === food.x && head.y === food.y) {
+            score += 1;
+            document.getElementById("score").textContent = "Puntuación: " + score;
+            foods.splice
+(index, 1);
+            growth++;
+            if (growth >= 5) {
+                clearInterval(intervalId);
+                intervalId = setInterval(gameLoop, 200 - (level * 5)); // Disminuir velocidad
+            }
+            if (score % 10 === 0) {
+                level++;
+                obstacleCount += 2;
+                clearInterval(intervalId);
+                intervalId = setInterval(gameLoop, 150 - (level * 5)); // La velocidad disminuye conforme aumenta el nivel
+                document.getElementById("level").textContent = "Nivel: " + level;
+            }
+            generateFood();
+        }
+    });
+    if (growth <= 0) {
+        snake.pop();
+    } else {
+        growth--;
+    }
+}
+
+function clearCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function gameLoop() {
+    clearCanvas();
+    updateSnake();
+    drawFood();
+    drawObstacles();
+    drawSnake();
+}
+
+function startGame() {
+    // Limpiar el intervalo anterior antes de configurar uno nuevo
+    clearInterval(intervalId);
+    
+    respawnSnake();
+    score = 0;
+    level = 1;
+    deaths = 0;
+    obstacleCount = 3;
+    document.getElementById("level").textContent = "Nivel: " + level;
+    document.getElementById("score").textContent = "Puntuación: " + score;
+    document.getElementById("deaths").textContent = "Muertes: " + deaths;
+    generateObstacles(); // Generar obstáculos al inicio del juego
+    generateFood(); // Generar comida al inicio del juego
+    
+    // Modificar la velocidad aquí (en milisegundos)
+    var velocidad = 200; // Por ejemplo, cambiar a 150 para hacerlo más lento
+    
+    intervalId = setInterval(gameLoop, velocidad);
+}
+
+function changeDirection(direction) {
+    switch (direction) {
+        case 'up':
+            if (dy === 0) {
+                dx = 0;
+                dy = -1;
+            }
+            break;
+        case 'down':
+            if (dy === 0) {
+                dx = 0;
+                dy = 1;
+            }
+            break;
+        case 'left':
+            if (dx === 0) {
+                dx = -1;
+                dy = 0;
+            }
+            break;
+        case 'right':
+            if (dx === 0) {
+                dx = 1;
+                dy = 0;
+            }
+            break;
+    }
+}
+
+function generateFood() {
+    // Limpiar los alimentos que no han sido devorados
+    foods = foods.filter(food => snake.some(segment => segment.x === food.x && segment.y === food.y));
+    // Generar nuevos alimentos
+    for (let i = foods.length; i < level + 1; i++) {
+        let foodX, foodY;
+        do {
+            foodX = Math.floor(Math.random() * tileCount);
+            foodY = Math.floor(Math.random() * tileCount);
+        } while (snake.some(segment => segment.x === foodX && segment.y === foodY) || obstacles.some(obstacle => obstacle.x === foodX && obstacle.y === foodY));
+        foods.push({x: foodX, y: foodY});
+    }
+}
+
+function generateObstacles() {
+    obstacles = [];
+    for (let i = 0; i < obstacleCount; i++) {
+        let obstacleX, obstacleY;
+        do {
+            obstacleX = Math.floor(Math.random() * tileCount);
+            obstacleY = Math.floor(Math.random() * tileCount);
+        } while (snake.some(segment => segment.x === obstacleX && segment.y === obstacleY) || (foods.some(food => food.x === obstacleX && food.y === obstacleY)));
+        obstacles.push({x: obstacleX, y: obstacleY});
+    }
+}
+
+
+function pauseGame() {
+    clearInterval(intervalId);
+    isPaused = true;
+    document.getElementById("pauseButton").style.display = "none";
+    document.getElementById("resumeButton").style.display = "inline-block";
+}
+
+function resumeGame() {
+    if (isPaused) {
+        var velocidad = 200; // Aquí establece la velocidad de acuerdo con el nivel
+        intervalId = setInterval(gameLoop, velocidad);
+        isPaused = false;
+        document.getElementById("pauseButton").style.display = "inline-block";
+        document.getElementById("resumeButton").style.display = "none";
+    }
+}
+// Escucha los eventos de teclado para cambiar la dirección del gusano
+document.addEventListener("keydown", function(event) {
+    switch(event.key) {
+        case "ArrowUp":
+            changeDirection('up');
+            break;
+        case "ArrowDown":
+            changeDirection('down');
+            break;
+        case "ArrowLeft":
+            changeDirection('left');
+            break;
+        case "ArrowRight":
+            changeDirection('right');
+            break;
+    }
+});
+
+</script>
+</body>
+</html>

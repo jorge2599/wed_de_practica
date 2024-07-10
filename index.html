@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Primera Página Web</title>
+    <link rel="stylesheet" href="estilo.css">
+    <link rel="icon" type="" href="">
+</head>
+<body>
+<header>
+    <h1>Bienvenido a Mi Primera Página Web</h1>
+    <span id="toggleSidebar" onclick="toggleSidebar()">☰</span>
+    <span id="searchIcon" onclick="toggleSearch()">🔎</span>
+    <span id="toggleSettings" onclick="toggleSettings()">⚙️</span>
+    <input type="search" id="searchInput" placeholder="Buscar juegos...">
+</header>
+
+<main>
+<nav>
+    <a href="#" onclick="toggleSection('main')">Inicio <span></span></a>
+    <a href="#" onclick="toggleSection('Juegos')">Juego <span></span></a>
+    <a href="#" onclick="toggleSection('publica')">Publicar <span></span></a>
+    <a href="#">Servicio <span></span></a>
+    <a href="#">Ayuda <span></span></a>
+</nav>
+
+<section id="main" style="display: block;">
+    <h2>Contenido Principal</h2>
+    <p>¡Esta es mi primera página web! Aquí puedes encontrar información sobre diferentes temas.</p>
+</section>
+
+<section id="sugerencia" style="display: none;">
+    <h2>Contacto</h2>
+    <p>Reporta los problemas que has encontrado en nuestra página web.</p>
+</section>
+
+<section id="Juegos" style="display: none;">
+    <h2>Juegos disponibles</h2>
+    <p>Aquí encontrarás una lista de los juegos disponibles.</p>
+    <figure>
+       
+        <a href="juegos/gusano2.0.html">
+            <img src="imagenes/gusano.jpeg" height="150px" width="130px" alt="Juego de gusano">
+        </a>
+        <figcaption>Juego del gusano</figcaption>
+    </figure>
+    <figure>
+        <a href="juegos/snake.html">
+            <img src="imagenes/snake.jpeg" height="150px" width="130px" alt="Snake">
+        </a>
+        <figcaption>Juego snake</figcaption>
+    </figure>
+</section>
+
+<section id="publica" style="display: none;">
+    <h2>Publicar Juego</h2>
+    <form id="publicatuJuego" method="POST" action="/publicar">
+        <label for="nombreJuego">Nombre del Juego</label><br>
+        <input type="text" id="nombreJuego" name="nombreJuego"><br>
+        <label for="descripcionJuego">Descripción del Juego</label><br>
+        <input type="text" id="descripcionJuego" name="descripcionJuego"><br>
+        <label for="urlJuego">URL del Juego</label><br>
+        <input type="text" id="urlJuego" name="urlJuego"><br><br>
+        <button type="submit">Publicar</button>
+    </form>
+</section>
+</main>
+
+<footer>
+    <p>Derechos de autor © 2024 - Mi Página Web</p>
+    <a href="#" id="facebook"><img src="logo_icom/logof.jpg" width="16px" height="16px" alt="Facebook"></a>
+    <a href="#" id="twitter"><img src="logo_icom/logot.png" width="16px" height="16px" alt="Twitter"></a>
+    <a href="#" id="instagram"><img src="logo_icom/logoins.png" width="16px" height="16px" alt="Instagram"></a>
+</footer>
+
+<div class="settings-menu" id="settingsMenu">
+    <button onclick="toggleDarkMode()">Cambiar Tema</button>
+    <button onclick="showLoginModal()">Iniciar Sesión</button>
+    <button onclick="showRegisterModal()">Registrarse</button>
+</div>
+
+<script src="script.js"></script>
+
+<div class="sidebar">
+    <span class="close-btn" onclick="toggleSidebar()">×</span>
+    <button onclick="toggleSearch()"><img src="logo_icom/lupa.png" alt="Buscar">Buscar</button>
+    <hr>
+    <button onclick="toggleSection('main')"><img src="logo_icom/Inicio.png" alt="Inicio">Inicio</button>
+    <hr>
+    <button onclick="toggleSection('Juegos')"><img src="logo_icom/Juego.jpg" alt="Juegos">Juego</button>
+    <hr>
+    <button onclick="toggleSection('publica')"><img src="logo_icom/Publicar_Juego.png" height="20px" alt="Publicar Juego">Publicar</button>
+    <hr>
+    <button onclick="toggleSection('sugerencia')"><img src="logo_icom/contacto.png" alt="Contacto">Contáctanos</button>
+    <hr>
+    <button onclick="toggleSettings()"><img src="logo_icom/configuracion.png" alt="Ajustes">Ajustes</button>
+</div>
+</body>
+</html>
